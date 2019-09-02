@@ -61,29 +61,29 @@ Function Init()
 	
 	; Start in CanCut State?
 	if (Game.GetPlayer().IsWeaponDrawn())
-		if (!CheckGotoWoodcutting(Game.GetPlayer().GetEquippedWeapon(false)))
-			if (!CheckGotoWoodcutting(Game.GetPlayer().GetEquippedWeapon(true)))
-				GotoIdle()
-			endif
-		endif
+		CheckGotoWoodcutting()
 	endif
 EndFunction
 
-bool Function CheckGotoWoodcutting(Form akWeapon)
-	if (WoodCuttingAxes.HasForm(akWeapon))
-		GotoState("CanCut")
-		RegisterForSingleUpdate(0.1)
-		; Debug.Notification("now cutting")
-		return true
+Function CheckGotoWoodcutting()
+	if (WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(false)) || WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(true)))
+		GotoWoodcutting()
+	else
+		GotoIdle()
 	endif
-	return false
+EndFunction
+
+Function GotoWoodcutting()
+	GotoState("CanCut")
+	RegisterForSingleUpdate(0.1)
+	;Debug.Notification("now cutting")
 EndFunction
 
 Function GotoIdle()
 	GotoState("Idle")
 	UnregisterForUpdate()
 	ClearActiveTrees()
-	; Debug.Notification("now idle")
+	;Debug.Notification("now idle")
 EndFunction
 
 Event OnUpdateGameTime()
@@ -94,7 +94,7 @@ EndEvent
 Event OnActorAction(int actionType, Actor akActor, Form source, int slot)
 	if (actionType == 7)
 		; Draw
-		CheckGotoWoodcutting(source)
+		CheckGotoWoodcutting()
 	elseif (actionType == 9)
 		; Sheath
 		GotoIdle()
@@ -108,7 +108,7 @@ EndState
 
 State CanCut
 	Event OnUpdate()
-		; Debug.Notification("Checking for trees...")
+		;Debug.Notification("Checking for trees...")
 		
 		ObjectReference[] treeCandidates = new ObjectReference[10]
 		bool[] isEnbledCandidate = new bool[10]
