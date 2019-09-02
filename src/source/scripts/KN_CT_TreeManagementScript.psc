@@ -2,8 +2,6 @@ Scriptname KN_CT_TreeManagementScript extends Quest Hidden
 
 FormList Property WoodCuttingAxes Auto
 FormList Property CuttableTrees Auto
-KeyWord Property IsActiveTree Auto
-KeyWord Property IsDisabledTree Auto
 float Property TreeRefreshTime = 72.0 Auto
 
 int tryCount
@@ -47,12 +45,46 @@ Event OnInit()
 		GetDisabledAlias(i).Clear()
 		i += 1
 	endwhile
+	
+	Init()
+EndEvent
 
+Function Init()
+	UnregisterForActorAction(7)
+	UnregisterForActorAction(9)
+	UnregisterForUpdateGameTime()
+	
 	RegisterForActorAction(7)
 	RegisterForActorAction(9)
 	RegisterForSingleUpdateGameTime(1)
 	RefreshDisabledTrees()
-EndEvent
+	
+	; Start in CanCut State?
+	if (Game.GetPlayer().IsWeaponDrawn())
+		if (!CheckGotoWoodcutting(Game.GetPlayer().GetEquippedWeapon(false)))
+			if (!CheckGotoWoodcutting(Game.GetPlayer().GetEquippedWeapon(true)))
+				GotoIdle()
+			endif
+		endif
+	endif
+EndFunction
+
+bool Function CheckGotoWoodcutting(Form akWeapon)
+	if (WoodCuttingAxes.HasForm(akWeapon))
+		GotoState("CanCut")
+		RegisterForSingleUpdate(0.1)
+		; Debug.Notification("now cutting")
+		return true
+	endif
+	return false
+EndFunction
+
+Function GotoIdle()
+	GotoState("Idle")
+	UnregisterForUpdate()
+	ClearActiveTrees()
+	; Debug.Notification("now idle")
+EndFunction
 
 Event OnUpdateGameTime()
 	RefreshDisabledTrees()
@@ -62,15 +94,10 @@ EndEvent
 Event OnActorAction(int actionType, Actor akActor, Form source, int slot)
 	if (actionType == 7)
 		; Draw
-		if (WoodCuttingAxes.HasForm(source))
-			GotoState("CanCut")
-			RegisterForSingleUpdate(0.1)
-		endif
+		CheckGotoWoodcutting(source)
 	elseif (actionType == 9)
 		; Sheath
-		GotoState("Idle")
-		UnregisterForUpdate()
-		ClearActiveTrees()
+		GotoIdle()
 	endif
 EndEvent
 
@@ -81,7 +108,7 @@ EndState
 
 State CanCut
 	Event OnUpdate()
-		;Debug.Notification("Checking for trees...")
+		; Debug.Notification("Checking for trees...")
 		
 		ObjectReference[] treeCandidates = new ObjectReference[10]
 		bool[] isEnbledCandidate = new bool[10]
@@ -135,9 +162,9 @@ State CanCut
 		
 		AssignTrees(treeCandidates, foundCount)
 		duration = Utility.GetCurrentRealTime() - startF
-		;Debug.Notification("Total: " + duration)
+		; Debug.Notification("Total: " + duration)
 		
-		RegisterForSingleUpdate(15)
+		RegisterForSingleUpdate(5)
 	EndEvent
 EndState
 
@@ -149,9 +176,9 @@ Function RefreshDisabledTrees()
 	while (j < disabledTreeCount)
 		KN_CT_DisabledTreeScript t = GetDisabledAlias(i)
 		if (t.CutTime + TreeRefreshTime/24.0 < Utility.GetCurrentGameTime())
-			;if (t.GetRef())
+			; if (t.GetRef())
 				; ct += 1
-			;endif
+			; endif
 			t.Clear()
 		endif
 		i = (i + 1) % disabledTreeCount
