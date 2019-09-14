@@ -187,6 +187,7 @@ Function AssignTrees(ObjectReference[] candidates, int numCandidates)
 					candidates[j] = none
 					canAssign = false
 					j = numCandidates
+					cur.ResetFreshState()
 				endif
 				j += 1
 			endwhile
@@ -249,6 +250,7 @@ Function FastAssignTree(ObjectReference akTree)
 		KN_CT_ActiveTreeScript cur = GetActiveAlias(i)
 		if (cur.GetRef() == akTree)
 			; Debug.Notification("Fast assigned tree is same")
+			cur.ResetFreshState()
 			return
 		endif
 		if (!cur.IsIntermediateState())
