@@ -1,0 +1,12 @@
+Version 1.2
+- Added Lite mod without SKSE
+- Don't show already harvested message when hitting a tree that was just harvested
+Version 1.1
+- KN Cutting Trees is now a ESL. It doesn't need a separate plugin slot
+- Bugfix: Cutting Trees would not start after loading a game
+- Bugfix: can cut trees when loading a game with Woodcutter's axe drawn
+- Bugfix: Changing drawn weapons to woodcutter's axe wouldn't enable cutting trees
+- Decreased polling timeout
+- Some cleanup
+Version 1.0
+- Initial Release
