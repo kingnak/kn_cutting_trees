@@ -6,7 +6,7 @@ float Property TreeRefreshTime = 72.0 Auto
 
 int tryCount = 10
 int activeTreeCount = 5
-int disabledTreeCount = 20
+int disabledTreeCount = 10
 int activeTreeBase = 40
 int disabledTreeBase = 50
 int nextDisabledIdx = 0
@@ -264,14 +264,14 @@ Function FastAssignTree(ObjectReference akTree)
 EndFunction
 
 KN_CT_DisabledTreeScript Function GetDisabledAlias(int i)
-	if (i >= disabledTreeCount)
+	if (i < 0 || i >= disabledTreeCount)
 		return none
 	endif
 	return (GetAlias(disabledTreeBase+i)) as KN_CT_DisabledTreeScript
 EndFunction
 
 KN_CT_ActiveTreeScript Function GetActiveAlias(int i)
-	if (i >= activeTreeCount)
+	if (i < 0 || i >= activeTreeCount)
 		return none
 	endif
 	return (GetAlias(activeTreeBase+i)) as KN_CT_ActiveTreeScript
