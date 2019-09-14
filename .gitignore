@@ -1,6 +1,7 @@
 
 *.pex
 
-Data/
+/SKSE/
+/Lite/
 
 *.7z

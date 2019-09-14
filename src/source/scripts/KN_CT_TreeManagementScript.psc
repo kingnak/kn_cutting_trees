@@ -4,38 +4,16 @@ FormList Property WoodCuttingAxes Auto
 FormList Property CuttableTrees Auto
 float Property TreeRefreshTime = 72.0 Auto
 
-int tryCount
-int activeTreeCount
-int disabledTreeCount
+int tryCount = 10
+int activeTreeCount = 5
+int disabledTreeCount = 20
+int activeTreeBase = 40
+int disabledTreeBase = 50
 int nextDisabledIdx = 0
-int[] aIdx
-int[] dIdx
 
 Event OnInit()
-	activeTreeCount = 5
-	tryCount = activeTreeCount * 2
-	aIdx = new int[10]
-	
-	; Initialize indices for active trees
-	int i = 0
-	while (i < activeTreeCount && i < 10)
-		aIdx[i] = i
-		i += 1
-	endwhile
-	
-	disabledTreeCount = 10
-	int dOff = activeTreeCount
-	
-	; Initialize indices for disabled trees
-	i = 0
-	dIdx = new int[10]
-	while (i < disabledTreeCount && i < 10)
-		dIdx[i] = i + dOff
-		i += 1
-	endwhile
-
 	; Clear all
-	i = 0
+	int i = 0
 	while (i < activeTreeCount)
 		GetActiveAlias(i).Clear()
 		i += 1
@@ -50,40 +28,38 @@ Event OnInit()
 EndEvent
 
 Function Init()
-	UnregisterForActorAction(7)
-	UnregisterForActorAction(9)
 	UnregisterForUpdateGameTime()
 	
-	RegisterForActorAction(7)
-	RegisterForActorAction(9)
 	RegisterForSingleUpdateGameTime(1)
 	RefreshDisabledTrees()
 	
+	RegisterInit()
+	
 	; Start in CanCut State?
-	if (Game.GetPlayer().IsWeaponDrawn())
-		CheckGotoWoodcutting()
-	endif
-EndFunction
-
-Function CheckGotoWoodcutting()
-	if (WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(false)) || WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(true)))
+	if (IsWoodcuttingEnabled(true))
 		GotoWoodcutting()
 	else
 		GotoIdle()
 	endif
 EndFunction
 
+Function RegisterInit()
+	; Abstract method. Initialize updates for changing states
+EndFunction
+
+bool Function IsWoodcuttingEnabled(bool checkDrawn)
+	if (!checkDrawn || Game.GetPlayer().IsWeaponDrawn())
+		return (WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(false)) || WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(true)))
+	endif
+	return false
+EndFunction
+
 Function GotoWoodcutting()
-	GotoState("CanCut")
-	RegisterForSingleUpdate(0.1)
-	;Debug.Notification("now cutting")
+	; Abstract method. Goto Woodcutting state
 EndFunction
 
 Function GotoIdle()
-	GotoState("Idle")
-	UnregisterForUpdate()
-	ClearActiveTrees()
-	;Debug.Notification("now idle")
+	; Abstract mehtod. Goto Idle state
 EndFunction
 
 Event OnUpdateGameTime()
@@ -91,82 +67,63 @@ Event OnUpdateGameTime()
 	RegisterForSingleUpdateGameTime(1)
 EndEvent
 
-Event OnActorAction(int actionType, Actor akActor, Form source, int slot)
-	if (actionType == 7)
-		; Draw
-		CheckGotoWoodcutting()
-	elseif (actionType == 9)
-		; Sheath
-		GotoIdle()
+Function FindTrees()
+	; Debug.Notification("Checking for trees...")
+		
+	ObjectReference[] treeCandidates = new ObjectReference[10]
+	bool[] isEnbledCandidate = new bool[10]
+	int i = 0
+	int foundCount = 0
+	
+	float startF = Utility.GetCurrentRealTime()
+	; Check closest first
+	ObjectReference foundTree = \
+		Game.FindClosestReferenceOfAnyTypeInListFromRef(CuttableTrees, Game.GetPlayer(), 1000)
+	if (foundTree)
+		treeCandidates[foundCount] = foundTree
+		foundCount += 1
+		;Debug.Notification("Found a candidate!")
 	endif
-EndEvent
-
-Auto State Idle
-	Event OnUpdate()
-	EndEvent
-EndState
-
-State CanCut
-	Event OnUpdate()
-		;Debug.Notification("Checking for trees...")
+	
+	FastAssignTree(foundTree)
+	
+	int searchIncrease = 0
+	int localFailCount = 0
+	; Check random in surrounding
+	while (i < tryCount && foundCount < activeTreeCount && searchIncrease <= 1500)
+		foundTree = \
+			Game.FindRandomReferenceOfAnyTypeInListFromRef(CuttableTrees, Game.GetPlayer(), 1000 + searchIncrease)
+		i += 1
 		
-		ObjectReference[] treeCandidates = new ObjectReference[10]
-		bool[] isEnbledCandidate = new bool[10]
-		int i = 0
-		int foundCount = 0
-		
-		float startF = Utility.GetCurrentRealTime()
-		; Check closest first
-		ObjectReference foundTree = \
-			Game.FindClosestReferenceOfAnyTypeInListFromRef(CuttableTrees, Game.GetPlayer(), 1000)
 		if (foundTree)
-			treeCandidates[foundCount] = foundTree
-			foundCount += 1
-			;Debug.Notification("Found a candidate!")
-		endif
-		
-		FastAssignTree(foundTree)
-		
-		int searchIncrease = 0
-		int localFailCount = 0
-		; Check random in surrounding
-		while (i < tryCount && foundCount < activeTreeCount && searchIncrease <= 1500)
-			foundTree = \
-				Game.FindRandomReferenceOfAnyTypeInListFromRef(CuttableTrees, Game.GetPlayer(), 1000 + searchIncrease)
-			i += 1
-			
-			if (foundTree)
-				int k = 0
-				while (k < foundCount && foundTree)
-					if (treeCandidates[k] == foundTree)
-						foundTree = none
-						localFailCount += 1
-					endif
-					k += 1
-				endwhile
-				if (foundTree)
-					treeCandidates[foundCount] = foundTree
-					foundCount += 1
-					;Debug.Notification("Found a candidate!")
+			int k = 0
+			while (k < foundCount && foundTree)
+				if (treeCandidates[k] == foundTree)
+					foundTree = none
+					localFailCount += 1
 				endif
-			else
-				localFailCount = 100
+				k += 1
+			endwhile
+			if (foundTree)
+				treeCandidates[foundCount] = foundTree
+				foundCount += 1
+				;Debug.Notification("Found a candidate!")
 			endif
-			if (localFailCount > 1)
-				searchIncrease += 500
-				localFailCount = 0
-			endif
-		endwhile
-		float duration = Utility.GetCurrentRealTime() - startF
-		;Debug.Notification("Tree search: " + duration)
-		
-		AssignTrees(treeCandidates, foundCount)
-		duration = Utility.GetCurrentRealTime() - startF
-		; Debug.Notification("Total: " + duration)
-		
-		RegisterForSingleUpdate(5)
-	EndEvent
-EndState
+		else
+			localFailCount = 100
+		endif
+		if (localFailCount > 1)
+			searchIncrease += 500
+			localFailCount = 0
+		endif
+	endwhile
+	float duration = Utility.GetCurrentRealTime() - startF
+	;Debug.Notification("Tree search: " + duration)
+	
+	AssignTrees(treeCandidates, foundCount)
+	duration = Utility.GetCurrentRealTime() - startF
+	; Debug.Notification("Total: " + duration)
+EndFunction
 
 Function RefreshDisabledTrees()
 	; Debug.Notification("Clearing trees...")
@@ -291,6 +248,7 @@ Function FastAssignTree(ObjectReference akTree)
 	while (i < activeTreeCount)
 		KN_CT_ActiveTreeScript cur = GetActiveAlias(i)
 		if (cur.GetRef() == akTree)
+			; Debug.Notification("Fast assigned tree is same")
 			return
 		endif
 		if (!cur.IsIntermediateState())
@@ -300,23 +258,23 @@ Function FastAssignTree(ObjectReference akTree)
 	endwhile
 	
 	KN_CT_ActiveTreeScript c = GetActiveAlias(candidate)
-	c.ForceRefTo(akTree)
 	c.ActivateTree(CheckCandidate(akTree))
-	;Debug.Notification("Fast assigned tree")
+	c.ForceRefTo(akTree)
+	; Debug.Notification("Fast assigned tree")
 EndFunction
 
 KN_CT_DisabledTreeScript Function GetDisabledAlias(int i)
 	if (i >= disabledTreeCount)
 		return none
 	endif
-	return (GetNthAlias(dIdx[i])) as KN_CT_DisabledTreeScript
+	return (GetAlias(disabledTreeBase+i)) as KN_CT_DisabledTreeScript
 EndFunction
 
 KN_CT_ActiveTreeScript Function GetActiveAlias(int i)
 	if (i >= activeTreeCount)
 		return none
 	endif
-	return (GetNthAlias(aIdx[i])) as KN_CT_ActiveTreeScript
+	return (GetAlias(activeTreeBase+i)) as KN_CT_ActiveTreeScript
 EndFunction
 
 Function ClearActiveTrees()
