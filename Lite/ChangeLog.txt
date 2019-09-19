@@ -1,3 +1,5 @@
+Version 1.2.1 LITE
+- Finally fixed re-starting of KN Cutting Trees after loading
 Version 1.2 LITE
 - Added Lite mod without SKSE
 - Don't show already harvested message when hitting a tree that was just harvested
