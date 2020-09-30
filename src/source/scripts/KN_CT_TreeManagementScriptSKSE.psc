@@ -7,7 +7,6 @@ String Property DropProbabilities = "1" auto
 
 Function RegisterInit()
 	;Debug.Notification("KN Cutting Trees SKSE init")
-	UpdateDynamicDropProbabilities()
 	
 	UnregisterForActorAction(7)
 	UnregisterForActorAction(9)
@@ -56,35 +55,12 @@ State CanCut
 	EndEvent
 EndState
 
-int dropProbSum
-int[] dropProbs
-MiscObject[] dropResources
-
-MiscObject Function GetDroppedWoodResource()
-	int max = dropProbSum
-	max -= 1
-	int rnd = Utility.RandomInt(0, max)
-	int i = 0
-	while (rnd >= dropProbs[i] && dropProbs[i] > 0 && i < 10)
-		rnd -= dropProbs[i]
-		i += 1
-	endwhile
-	return dropResources[i]
-EndFunction
-
 Function UpdateDynamicDropProbabilities()
+	ClearDynamicDropItems()
+	
 	int i = 0
-	dropProbs = new int[10]
-	dropResources = new MiscObject[10]
-	while (i < 10)
-		dropProbs[i] = 0
-		dropResources[i] = none
-		i += 1
-	endwhile
 
 	bool ok = true
-	dropProbSum = 0
-	i = 0
 	String dp = DropProbabilities
 	while (i < 10 && i < DroppedWoodList.GetSize() && ok)
 		; Get next probabilty (or reminder, of at end)
@@ -122,10 +98,7 @@ Function UpdateDynamicDropProbabilities()
 		
 		MiscObject resource = DroppedWoodList.GetAt(i) as MiscObject
 		if (resource)
-			dropProbSum += curProbInt
-			dropProbs[i] = curProbInt
-			dropResources[i] = resource
-			;Debug.Notification("Assigned at " + i + " with prob " + dropProbs[i] + ": " + dropResources[i].GetFormID())
+			AddDynamicDropItem(resource, curProbInt)
 		endif
 		i += 1
 	endwhile
@@ -133,22 +106,8 @@ Function UpdateDynamicDropProbabilities()
 	; Error, go back to default
 	if (!ok)
 		;Debug.Notification("NOT OK")
-		i = 0
-		while (i < 10)
-			dropProbs[i] = 0
-			dropResources[i] = none
-			i += 1
-		endwhile
-
-		dropProbSum = 1
-		dropProbs[0] = 1
-		dropResources[0] = DefaultDropResource
+		ClearDynamicDropItems()
 	endif
 	
-	; Debug
-	; i = 0
-	; while (i < 10)
-		; Debug.Notification(i + ": " + dropProbs[i] + " for " + dropResources[i])
-		; i += 1
-	; endwhile
+	DumpDynamicDropItems()
 EndFunction

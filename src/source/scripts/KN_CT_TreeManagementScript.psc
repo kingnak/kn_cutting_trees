@@ -13,6 +13,10 @@ int disabledTreeCount = 10
 int activeTreeBase = 40
 int disabledTreeBase = 50
 
+int dropProbSum
+int[] dropProbs
+MiscObject[] dropResources
+
 Event OnInit()
 	; Clear all
 	int i = 0
@@ -32,7 +36,13 @@ EndEvent
 Function Init()
 	UnregisterForUpdateGameTime()
 	
+	dropProbs = new int[10]
+	dropResources = new MiscObject[10]
+	ClearDynamicDropItems()
+	
 	InitializeTrees()
+	UpdateDynamicDropProbabilities()
+	
 	RegisterForSingleUpdateGameTime(1)
 	RefreshDisabledTrees()
 	
@@ -73,6 +83,54 @@ Event OnUpdateGameTime()
 	RefreshDisabledTrees()
 	RegisterForSingleUpdateGameTime(1)
 EndEvent
+
+Function UpdateDynamicDropProbabilities()
+	ClearDynamicDropItems()
+EndFunction
+
+Function ClearDynamicDropItems()
+	int i = 0
+	while (i < 10)
+		dropProbs[i] = 0
+		dropResources[i] = none
+		i += 1
+	endwhile
+	dropProbSum = 0
+EndFunction
+
+Function DumpDynamicDropItems()
+	; Debug
+	; int i = 0
+	; if (dropProbSum == 0)
+		; Debug.Notification("No dynamic drop items")
+		; return
+	; endif
+	; Debug.Notification("Probability sum: " + dropProbSum)
+	; while (i < 10)
+		; Debug.Notification(i + ": " + dropProbs[i] + " for " + dropResources[i])
+		; i += 1
+	; endwhile
+EndFunction
+
+Function AddDynamicDropItem(MiscObject object, int prob)
+	; Debug.Notification("Adding :" + prob + ": " + object.GetFormID())
+	if (object == none || prob < 1)
+		return
+	endif
+	int i = 0
+	int sum = 0
+	while (i < 10 && dropResources[i] != none)
+		sum += dropProbs[i]
+		i += 1
+	endwhile
+	if (i < 10)
+		dropProbs[i] = prob
+		dropResources[i] = object
+		sum += prob
+		dropProbSum = sum
+		; Debug.Notification("Assigned at " + i + " with prob " + dropProbs[i] + ": " + dropResources[i].GetFormID())
+	endif
+EndFunction
 
 Function InitializeTrees()
 	int i = 0
@@ -169,7 +227,19 @@ Function CutTree(ObjectReference arTree)
 EndFunction
 
 MiscObject Function GetDroppedWoodResource()
-	return DefaultDropResource
+	if (dropProbSum <= 0)
+		return DefaultDropResource
+	endif
+	
+	int max = dropProbSum
+	max -= 1
+	int rnd = Utility.RandomInt(0, max)
+	int i = 0
+	while (rnd >= dropProbs[i] && dropProbs[i] > 0 && i < 10)
+		rnd -= dropProbs[i]
+		i += 1
+	endwhile
+	return dropResources[i]
 EndFunction
 
 bool Function GetExtraResource()
