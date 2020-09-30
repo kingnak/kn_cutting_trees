@@ -1,15 +1,17 @@
 Scriptname KN_CT_TreeManagementScript extends Quest Hidden
 
+Message Property MsgAlreadyHarvested Auto
 FormList Property WoodCuttingAxes Auto
 FormList Property CuttableTrees Auto
+MiscObject Property DefaultDropResource Auto
 float Property TreeRefreshTime = 72.0 Auto
+int Property nextDisabledIdx = 0 Auto
 
 int tryCount = 10
 int activeTreeCount = 5
 int disabledTreeCount = 10
 int activeTreeBase = 40
 int disabledTreeBase = 50
-int nextDisabledIdx = 0
 
 Event OnInit()
 	; Clear all
@@ -30,6 +32,7 @@ EndEvent
 Function Init()
 	UnregisterForUpdateGameTime()
 	
+	InitializeTrees()
 	RegisterForSingleUpdateGameTime(1)
 	RefreshDisabledTrees()
 	
@@ -47,9 +50,13 @@ Function RegisterInit()
 	; Abstract method. Initialize updates for changing states
 EndFunction
 
+bool Function IsCuttingAxe(Form akAxe)
+	return WoodCuttingAxes.HasForm(akAxe)
+EndFunction
+
 bool Function IsWoodcuttingEnabled(bool checkDrawn)
 	if (!checkDrawn || Game.GetPlayer().IsWeaponDrawn())
-		return (WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(false)) || WoodCuttingAxes.HasForm(Game.GetPlayer().GetEquippedWeapon(true)))
+		return (IsCuttingAxe(Game.GetPlayer().GetEquippedWeapon(false)) || IsCuttingAxe(Game.GetPlayer().GetEquippedWeapon(true)))
 	endif
 	return false
 EndFunction
@@ -66,6 +73,15 @@ Event OnUpdateGameTime()
 	RefreshDisabledTrees()
 	RegisterForSingleUpdateGameTime(1)
 EndEvent
+
+Function InitializeTrees()
+	int i = 0
+	while (i < activeTreeCount)
+		GetActiveAlias(i).manager = self
+		GetActiveAlias(i).MsgAlreadyHarvested = MsgAlreadyHarvested
+		i += 1
+	endwhile
+EndFunction
 
 Function FindTrees()
 	; Debug.Notification("Checking for trees...")
@@ -150,6 +166,14 @@ Function CutTree(ObjectReference arTree)
 	x.CutTime = Utility.GetCurrentGameTime()
 	
 	nextDisabledIdx = (nextDisabledIdx + 1) % disabledTreeCount
+EndFunction
+
+MiscObject Function GetDroppedWoodResource()
+	return DefaultDropResource
+EndFunction
+
+bool Function GetExtraResource()
+	return false
 EndFunction
 
 bool Function CheckCandidate(ObjectReference akTree)
@@ -286,3 +310,4 @@ Function ClearActiveTrees()
 		i += 1
 	endwhile
 EndFunction
+

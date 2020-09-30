@@ -1,9 +1,6 @@
 Scriptname KN_CT_ActiveTreeScript extends ReferenceAlias Hidden 
 
-
-FormList Property CuttingAxes Auto
 KN_CT_TreeManagementScript Property Manager Auto
-MiscObject Property WoodResource Auto
 Message Property MsgAlreadyHarvested Auto
 
 int Property HitCount = 0 Auto
@@ -14,23 +11,43 @@ bool Property IsFreshHit = false  Auto
 Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, \
   bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
 	if (akAggressor == Game.GetPlayer())
-		if (CuttingAxes.HasForm(akSource))
+		if (Manager.IsCuttingAxe(akSource))
 			if (WasHarvested)
 				if (!IsFreshHit)
 					MsgAlreadyHarvested.Show()
 				endif
 			else
-				HitCount += 1
-				if (HitCount >= MaxHitCount)
-					akAggressor.AddItem(WoodResource)
-					Manager.CutTree(self.GetReference())
-					WasHarvested = true
-					IsFreshHit = true
-				endif
+				Harvest()
 			endif
 		endif
 	endif
 EndEvent
+
+Function Harvest()
+	HitCount += 1
+	if (HitCount >= MaxHitCount)
+		; Don't show message while dropping
+		IsFreshHit = true
+		WasHarvested = true
+		Manager.CutTree(self.GetReference())
+		MiscObject res = Manager.GetDroppedWoodResource()
+		; Debug.Notification("Dropping " + res.GetFormID())
+		DropAtPlayer(res)
+		if (Manager.GetExtraResource())
+			; Debug.Notification("Dropping extra")
+			res = Manager.GetDroppedWoodResource()
+			DropAtPlayer(res)
+		endif
+		; Now we can show message
+		IsFreshHit = false
+	endif
+EndFunction
+
+Function DropAtPlayer(MiscObject object)
+	float fAngZ = Game.GetPlayer().GetAngleZ()
+	ObjectReference resRef = Game.GetPlayer().PlaceAtMe(object)
+	resRef.MoveTo(Game.GetPlayer(), 95*Math.Sin(fAngZ), 95*Math.Cos(fAngZ), 75, true)
+EndFunction
 
 Function ActivateTree(bool enabled)
 	WasHarvested = !enabled
