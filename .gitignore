@@ -1,6 +1,6 @@
 
 *.pex
-
+/distr
 /SKSE/Data
 /Lite/Data
 

@@ -1,0 +1,135 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+	<moduleName>KN Cutting Trees</moduleName>
+	<installSteps order="Explicit">
+		<installStep name="Mod version">
+			<optionalFileGroups>
+				<group name="Mod version" type="SelectExactlyOne">
+					<plugins order="Explicit">
+						<plugin name="KN Cutting Trees SKSE">
+							<description>KN Cutting Trees main mod based on Skyrim Script Extender (SKSE).&#xD;
+&#xD;
+Highly recommended, use this if you have SKSE installed</description>
+							<conditionFlags>
+								<flag name="mod_type">SKSE</flag>
+							</conditionFlags>
+							<files>
+								<folder source="00 Core" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<!-- This doesn't seem to work... 
+								<dependencyType>
+								
+									<defaultType name="Recommended"/>
+									<patterns>
+										<pattern>
+											<dependencies>
+												<fileDependency file="scripts/stringutil.pex" state="Missing"/>
+											</dependencies>
+											<type name="NotUsable"/>
+										</pattern>
+									</patterns>
+								</dependencyType>
+								-->
+								<type name="Optional"/>
+							</typeDescriptor>
+						</plugin>
+						<plugin name="KN Cutting Trees Lite">
+							<description>KN Cutting Trees main mod Lite.&#xD;
+&#xD;
+Only use if you don't have SKSE</description>
+							<conditionFlags>
+								<flag name="mod_type">Lite</flag>
+							</conditionFlags>
+							<files>
+								<folder source="00 Core" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<type name="Optional"/>
+							</typeDescriptor>
+						</plugin>
+					</plugins>
+				</group>
+			</optionalFileGroups>
+		</installStep>
+		
+		<installStep name="Campfire Extension">
+			<visible>
+				<flagDependency flag="mod_type" value="SKSE"/>
+			</visible>
+			<optionalFileGroups>
+				<group name="Campfire" type="SelectExactlyOne">
+					<plugins order="Explicit">
+						<plugin name="No campfire">
+							<description>Plain KN Cutting Trees version</description>
+							<files>
+								<folder source="10 Plain SKSE" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<type name="Optional"/>
+							</typeDescriptor>
+						</plugin>
+						<plugin name="Campfire extension">
+							<description>Add extension for Campfire - Complete Camping Sytem</description>
+							<files>
+								<folder source="11 Campfire SKSE" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<dependencyType>
+									<defaultType name="NotUsable"/>
+									<patterns>
+										<pattern>
+											<dependencies>
+												<fileDependency file="Campfire.esm" state="Active"/>
+											</dependencies>
+											<type name="Optional"/>
+										</pattern>
+									</patterns>
+								</dependencyType>
+							</typeDescriptor>
+						</plugin>
+					</plugins>
+				</group>
+			</optionalFileGroups>
+		</installStep>
+		
+		<installStep name="Campfire Extension">
+			<visible>
+				<flagDependency flag="mod_type" value="Lite"/>
+			</visible>
+			<optionalFileGroups>
+				<group name="Campfire" type="SelectExactlyOne">
+					<plugins order="Explicit">
+						<plugin name="No campfire">
+							<description>Plain KN Cutting Trees version</description>
+							<files>
+								<folder source="20 Plain Lite" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<type name="Optional"/>
+							</typeDescriptor>
+						</plugin>
+						<plugin name="Campfire extension">
+							<description>Add extension for Campfire - Complete Camping Sytem</description>
+							<files>
+								<folder source="21 Campfire Lite" destination="" priority="0"/>
+							</files>
+							<typeDescriptor>
+								<dependencyType>
+									<defaultType name="NotUsable"/>
+									<patterns>
+										<pattern>
+											<dependencies>
+												<fileDependency file="Campfire.esm" state="Active"/>
+											</dependencies>
+											<type name="Optional"/>
+										</pattern>
+									</patterns>
+								</dependencyType>
+							</typeDescriptor>
+						</plugin>
+					</plugins>
+				</group>
+			</optionalFileGroups>
+		</installStep>
+	</installSteps>
+</config>
